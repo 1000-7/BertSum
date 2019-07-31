@@ -45,7 +45,7 @@ class Bert(nn.Module):
         super(Bert, self).__init__()
         if (load_pretrained_bert):
             logger.info("temp_dir: %s", temp_dir)
-            self.model = BertModel.from_pretrained('/Users/unclewang/PycharmProjects/BertSum/temp/bert/bert-base-uncased.tar.gz')
+            self.model = BertModel.from_pretrained('../temp/bert/bert-base-uncased.tar.gz')
         else:
             self.model = BertModel(bert_config)
 
