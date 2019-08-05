@@ -1,5 +1,5 @@
+# -- coding: UTF-8 --
 import os
-
 import numpy as np
 import torch
 from tensorboardX import SummaryWriter
@@ -32,7 +32,6 @@ def build_trainer(args, device_id, model,
             used to save the model
     """
     device = "cpu" if args.visible_gpus == '-1' else "cuda"
-
 
     grad_accum_count = args.accum_count
     n_gpu = args.world_size
@@ -86,9 +85,9 @@ class Trainer(object):
                 Thus nothing will be saved if this parameter is None
     """
 
-    def __init__(self,  args, model,  optim,
-                  grad_accum_count=1, n_gpu=1, gpu_rank=1,
-                  report_manager=None):
+    def __init__(self, args, model, optim,
+                 grad_accum_count=1, n_gpu=1, gpu_rank=1,
+                 report_manager=None):
         # Basic attributes.
         self.args = args
         self.save_checkpoint_steps = args.save_checkpoint_steps
@@ -126,7 +125,7 @@ class Trainer(object):
         logger.info('Start training...')
 
         # step =  self.optim._step + 1
-        step =  self.optim._step + 1
+        step = self.optim._step + 1
         true_batchs = []
         accum = 0
         normalization = 0
@@ -186,7 +185,6 @@ class Trainer(object):
 
         with torch.no_grad():
             for batch in valid_iter:
-
                 src = batch.src
                 labels = batch.labels
                 segs = batch.segs
@@ -195,7 +193,6 @@ class Trainer(object):
                 mask_cls = batch.mask_cls
 
                 sent_scores, mask = self.model(src, segs, clss, mask, mask_cls)
-
 
                 loss = self.loss(sent_scores, labels.float())
                 loss = (loss * mask.float()).sum()
@@ -210,6 +207,7 @@ class Trainer(object):
         Returns:
             :obj:`nmt.Statistics`: validation loss statistics
         """
+
         # Set model in validating mode.
         def _get_ngrams(n, text):
             ngram_set = set()
@@ -223,7 +221,7 @@ class Trainer(object):
             tri_c = _get_ngrams(3, c.split())
             for s in p:
                 tri_s = _get_ngrams(3, s.split())
-                if len(tri_c.intersection(tri_s))>0:
+                if len(tri_c.intersection(tri_s)) > 0:
                     return True
             return False
 
@@ -231,7 +229,7 @@ class Trainer(object):
             self.model.eval()
         stats = Statistics()
 
-        can_path = '%s_step%d.candidate'%(self.args.result_path,step)
+        can_path = '%s_step%d.candidate' % (self.args.result_path, step)
         gold_path = '%s_step%d.gold' % (self.args.result_path, step)
         with open(can_path, 'w') as save_pred:
             with open(gold_path, 'w') as save_gold:
@@ -243,7 +241,6 @@ class Trainer(object):
                         clss = batch.clss
                         mask = batch.mask
                         mask_cls = batch.mask_cls
-
 
                         gold = []
                         pred = []
@@ -267,14 +264,14 @@ class Trainer(object):
                         # selected_ids = np.sort(selected_ids,1)
                         for i, idx in enumerate(selected_ids):
                             _pred = []
-                            if(len(batch.src_str[i])==0):
+                            if (len(batch.src_str[i]) == 0):
                                 continue
                             for j in selected_ids[i][:len(batch.src_str[i])]:
-                                if(j>=len( batch.src_str[i])):
+                                if (j >= len(batch.src_str[i])):
                                     continue
                                 candidate = batch.src_str[i][j].strip()
-                                if(self.args.block_trigram):
-                                    if(not _block_tri(candidate,_pred)):
+                                if (self.args.block_trigram):
+                                    if (not _block_tri(candidate, _pred)):
                                         _pred.append(candidate)
                                 else:
                                     _pred.append(candidate)
@@ -283,24 +280,22 @@ class Trainer(object):
                                     break
 
                             _pred = '<q>'.join(_pred)
-                            if(self.args.recall_eval):
+                            if (self.args.recall_eval):
                                 _pred = ' '.join(_pred.split()[:len(batch.tgt_str[i].split())])
 
                             pred.append(_pred)
                             gold.append(batch.tgt_str[i])
 
                         for i in range(len(gold)):
-                            save_gold.write(gold[i].strip()+'\n')
+                            save_gold.write(gold[i].strip() + '\n')
                         for i in range(len(pred)):
-                            save_pred.write(pred[i].strip()+'\n')
-        if(step!=-1 and self.args.report_rouge):
+                            save_pred.write(pred[i].strip() + '\n')
+        if (step != -1 and self.args.report_rouge):
             rouges = test_rouge(self.args.temp_dir, can_path, gold_path)
             logger.info('Rouges at step %d \n%s' % (step, rouge_results_to_str(rouges)))
         self._report_step(0, step, valid_stats=stats)
 
         return stats
-
-
 
     def _gradient_accumulation(self, true_batchs, normalization, total_stats,
                                report_stats):
@@ -321,12 +316,11 @@ class Trainer(object):
             sent_scores, mask = self.model(src, segs, clss, mask, mask_cls)
 
             loss = self.loss(sent_scores, labels.float())
-            loss = (loss*mask.float()).sum()
-            (loss/loss.numel()).backward()
+            loss = (loss * mask.float()).sum()
+            (loss / loss.numel()).backward()
             # loss.div(float(normalization)).backward()
 
             batch_stats = Statistics(float(loss.cpu().data.numpy()), normalization)
-
 
             total_stats.update(batch_stats)
             report_stats.update(batch_stats)
