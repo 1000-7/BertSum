@@ -92,7 +92,10 @@ def load_dataset(args, corpus_type, shuffle):
             random.shuffle(pts)
 
         for pt in pts:
-            yield _lazy_dataset_loader(pt, corpus_type)
+            try:
+                yield _lazy_dataset_loader(pt, corpus_type)
+            except UnicodeDecodeError:
+                continue
     else:
         # Only one inputters.*Dataset, simple!
         pt = args.bert_data_path + '.' + corpus_type + '.pt'
